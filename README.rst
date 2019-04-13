@@ -24,7 +24,7 @@ Let’s Encrypt 在 2018 年推出了 wildcard 证书，申请或更新 wildcard
 
 .. code-block:: bash
 
-   $ git https://github.com/akgnah/certbot-wildcard-qcloud-hook
+   $ git clone https://github.com/akgnah/certbot-wildcard-qcloud-hook
    $ cd certbot-wildcard-qcloud-hook
    $ chmod +x qcloud-dns.py
 

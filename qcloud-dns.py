@@ -67,6 +67,10 @@ class Client(object):
         else:
             resp = requests.post(req_host, data=params)
 
+        if resp.json()['code'] != 0:
+            print(" - qcloud API error message: {}".format(
+                resp.json()['message'].encode('utf-8')))
+            exit(-1)
         return resp.json()
 
 
@@ -106,23 +110,43 @@ class Cns:
         return self.client.send(body)
 
 
+def separate(url):
+    Topdomain = ['edu', 'cn', 'com', 'net', 'co']
+    parts = url.split('.')
+    name = []
+    domain = []
+    for test in Topdomain:
+        try:
+            if parts.index(test):
+                name = parts[0:parts.index(test)-1]
+                domain = parts[parts.index(test)-1:]
+                break
+        except ValueError:
+            continue
+    return {
+        'name': ".".join(name),
+        'domain': ".".join(domain)
+    }
+
+
 def run(secret_id, secret_key):
     env = os.environ.copy()
     cns = Cns(secret_id, secret_key)
     option = sys.argv[1]  # add|del
-    domain = env['CERTBOT_DOMAIN']
-    name = '_acme-challenge'
+    domain = separate(env['CERTBOT_DOMAIN'])['domain']
+    name = "_acme-challenge.{}".format(
+        separate(env['CERTBOT_DOMAIN'])['name'])
     value = env['CERTBOT_VALIDATION']
-
     print(' - {} {} {} {}'.format(option, domain, name, value))
-
     if option == 'add':
         cns.create(domain, name, 'TXT', value)
         time.sleep(10)  # Waiting for record to take effect
     elif option == 'del':
         for record in cns.list(domain)['data']['records']:
             if record['name'] == name and record['value'] == value:
-                cns.delete(domain, record['id'])
+                print(cns.delete(domain, record['id']))
+        else:
+            print(" - No records found")
 
 
 if __name__ == '__main__':
